@@ -14,9 +14,7 @@ import streamlit as st
 
 from bwa_backend import app
 
-# ─────────────────────────────────────────────
-# Page config — must be first Streamlit call
-# ─────────────────────────────────────────────
+# ── Page config ──────────────────────────────
 st.set_page_config(
     page_title="Blog Writing Agent",
     page_icon="✍️",
@@ -24,189 +22,59 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─────────────────────────────────────────────
-# Global CSS — clean white/light theme
-# ─────────────────────────────────────────────
+# ── CSS (only stable, non-internal selectors) ─
 st.markdown(
     """
     <style>
-    /* ── Google Font ── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+    html, body, button, input, textarea, select, label, p, div {
+        font-family: 'Inter', sans-serif !important;
     }
 
-    /* ── Root background ── */
-    .stApp {
-        background-color: #f7f8fa;
-    }
+    /* App background */
+    .stApp { background-color: #f5f6fa; }
 
-    /* ── Sidebar ── */
-    section[data-testid="stSidebar"] {
+    /* Stat card for live progress */
+    .stat-row { display: flex; gap: 12px; margin: 12px 0; }
+    .stat-card {
+        flex: 1;
         background: #ffffff;
-        border-right: 1px solid #e8eaed;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #4263eb; }
+    .stat-label { font-size: 0.72rem; color: #94a3b8; margin-top: 4px;
+                  text-transform: uppercase; letter-spacing: 0.6px; }
 
-    /* ── Main header ── */
-    .main-header {
-        background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
-        border: 1px solid #e2e8f7;
+    /* Header card */
+    .header-card {
+        background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
+        border: 1px solid #dde4f7;
         border-radius: 16px;
         padding: 28px 36px;
-        margin-bottom: 28px;
-        box-shadow: 0 2px 12px rgba(66, 99, 235, 0.06);
+        margin-bottom: 24px;
+        box-shadow: 0 2px 10px rgba(66,99,235,0.06);
     }
-    .main-header h1 {
-        margin: 0 0 6px 0;
-        font-size: 2rem;
-        font-weight: 700;
-        color: #1a1a2e;
-        letter-spacing: -0.5px;
-    }
-    .main-header p {
-        margin: 0;
-        color: #6b7280;
-        font-size: 0.95rem;
-    }
+    .header-card h1 { margin:0 0 6px; font-size:1.9rem; font-weight:700;
+                      color:#1e293b; letter-spacing:-0.3px; }
+    .header-card p  { margin:0; color:#64748b; font-size:0.92rem; }
 
-    /* ── Stat cards ── */
-    .stat-card {
-        background: #ffffff;
-        border: 1px solid #e8eaed;
-        border-radius: 12px;
-        padding: 18px 22px;
-        text-align: center;
-        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-        transition: box-shadow 0.2s;
-    }
-    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-    .stat-card .stat-value {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #4263eb;
-    }
-    .stat-card .stat-label {
-        font-size: 0.78rem;
-        color: #9ca3af;
-        margin-top: 4px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* ── Tab bar ── */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 6px;
-        border: 1px solid #e8eaed;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 8px 18px;
-        font-weight: 500;
-        font-size: 0.88rem;
-        color: #6b7280;
-        background: transparent;
-        border: none;
-    }
-    .stTabs [aria-selected="true"] {
-        background: #4263eb !important;
-        color: #ffffff !important;
-    }
-
-    /* ── Primary button ── */
-    .stButton > button[kind="primary"] {
-        background: #4263eb;
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 24px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: background 0.2s, transform 0.1s;
-        width: 100%;
-    }
-    .stButton > button[kind="primary"]:hover {
-        background: #3451d1;
-        transform: translateY(-1px);
-    }
-
-    /* ── Secondary button ── */
-    .stButton > button[kind="secondary"] {
-        border: 1.5px solid #4263eb;
-        color: #4263eb;
-        background: transparent;
-        border-radius: 10px;
-        font-weight: 500;
-        transition: all 0.2s;
-        width: 100%;
-    }
-    .stButton > button[kind="secondary"]:hover {
-        background: #eef1fd;
-    }
-
-    /* ── Inputs ── */
-    .stTextArea textarea, .stTextInput input {
-        border: 1.5px solid #e2e8f0;
-        border-radius: 10px;
-        font-family: 'Inter', sans-serif;
-        background: #ffffff;
-        transition: border 0.2s;
-    }
-    .stTextArea textarea:focus, .stTextInput input:focus {
-        border-color: #4263eb;
-        box-shadow: 0 0 0 3px rgba(66,99,235,0.12);
-    }
-
-    /* ── Download buttons ── */
-    .stDownloadButton > button {
-        border: 1.5px solid #e2e8f0;
-        border-radius: 10px;
-        background: #ffffff;
-        font-weight: 500;
-        color: #374151;
-        transition: all 0.2s;
-    }
-    .stDownloadButton > button:hover {
-        border-color: #4263eb;
-        color: #4263eb;
-        background: #f0f4ff;
-    }
-
-    /* ── Node badge ── */
-    .node-badge {
-        display: inline-block;
-        background: #eef1fd;
-        color: #4263eb;
-        border-radius: 6px;
-        padding: 3px 10px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        margin: 3px 0;
-    }
-
-    /* ── Divider ── */
-    hr { border-color: #e8eaed; }
-
-    /* ── Footer ── */
-    .footer {
-        text-align: center;
-        color: #9ca3af;
-        font-size: 0.78rem;
-        padding: 24px 0 8px;
-    }
+    /* Empty state */
+    .empty-state { text-align:center; padding:72px 20px; color:#94a3b8; }
+    .empty-state .icon { font-size:3.5rem; margin-bottom:14px; }
+    .empty-state h3 { color:#334155; font-weight:600; margin-bottom:8px; }
+    .empty-state p  { font-size:0.92rem; max-width:380px; margin:0 auto; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 
-# ─────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────
 
 def safe_slug(title: str) -> str:
     s = title.strip().lower()
@@ -271,31 +139,27 @@ def extract_latest_state(
     return current_state
 
 
-# ── Markdown renderer with local image support ──
+# ── Markdown renderer with local image support ─
 _MD_IMG_RE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)")
 _CAPTION_LINE_RE = re.compile(r"^\*(?P<cap>.+)\*$")
 
 
 def _resolve_image_path(src: str) -> Path:
-    src = src.strip().lstrip("./")
-    return Path(src).resolve()
+    return Path(src.strip().lstrip("./")).resolve()
 
 
 def render_markdown_with_local_images(md: str):
     matches = list(_MD_IMG_RE.finditer(md))
     if not matches:
-        st.markdown(md, unsafe_allow_html=False)
+        st.markdown(md)
         return
-
     parts: List[Tuple[str, str]] = []
     last = 0
     for m in matches:
         before = md[last : m.start()]
         if before:
             parts.append(("md", before))
-        alt = (m.group("alt") or "").strip()
-        src = (m.group("src") or "").strip()
-        parts.append(("img", f"{alt}|||{src}"))
+        parts.append(("img", f"{(m.group('alt') or '').strip()}|||{(m.group('src') or '').strip()}"))
         last = m.end()
     tail = md[last:]
     if tail:
@@ -305,10 +169,9 @@ def render_markdown_with_local_images(md: str):
     while i < len(parts):
         kind, payload = parts[i]
         if kind == "md":
-            st.markdown(payload, unsafe_allow_html=False)
+            st.markdown(payload)
             i += 1
             continue
-
         alt, src = payload.split("|||", 1)
         caption = None
         if i + 1 < len(parts) and parts[i + 1][0] == "md":
@@ -318,29 +181,22 @@ def render_markdown_with_local_images(md: str):
                 mcap = _CAPTION_LINE_RE.match(first_line)
                 if mcap:
                     caption = mcap.group("cap").strip()
-                    rest = "\n".join(nxt.splitlines()[1:])
-                    parts[i + 1] = ("md", rest)
-
+                    parts[i + 1] = ("md", "\n".join(nxt.splitlines()[1:]))
         if src.startswith("http://") or src.startswith("https://"):
-            st.image(src, caption=caption or (alt or None), use_container_width=True)
+            st.image(src, caption=caption or alt or None)
         else:
             img_path = _resolve_image_path(src)
             if img_path.exists():
-                st.image(
-                    str(img_path),
-                    caption=caption or (alt or None),
-                    use_container_width=True,
-                )
+                st.image(str(img_path), caption=caption or alt or None)
             else:
                 st.warning(f"Image not found: `{src}`")
         i += 1
 
 
-# ── Past blogs ──
+# ── Past blogs helpers ─────────────────────────
 
 def list_past_blogs() -> List[Path]:
-    cwd = Path(".")
-    files = [p for p in cwd.glob("*.md") if p.is_file()]
+    files = [p for p in Path(".").glob("*.md") if p.is_file()]
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return files
 
@@ -352,26 +208,21 @@ def read_md_file(p: Path) -> str:
 def extract_title_from_md(md: str, fallback: str) -> str:
     for line in md.splitlines():
         if line.startswith("# "):
-            t = line[2:].strip()
-            return t or fallback
+            return line[2:].strip() or fallback
     return fallback
 
 
-# ─────────────────────────────────────────────
-# Session defaults
-# ─────────────────────────────────────────────
+# ── Session state defaults ─────────────────────
 if "last_out" not in st.session_state:
     st.session_state["last_out"] = None
 if "logs" not in st.session_state:
     st.session_state["logs"] = []
 
 
-# ─────────────────────────────────────────────
-# Page header
-# ─────────────────────────────────────────────
+# ── Header ────────────────────────────────────
 st.markdown(
     """
-    <div class="main-header">
+    <div class="header-card">
         <h1>✍️ Blog Writing Agent</h1>
         <p>Powered by LangGraph &nbsp;·&nbsp; Generate research-backed, long-form blogs in seconds.</p>
     </div>
@@ -380,12 +231,10 @@ st.markdown(
 )
 
 
-# ─────────────────────────────────────────────
-# Sidebar
-# ─────────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────
 with st.sidebar:
-    st.markdown("### ✍️ New Blog")
-    st.markdown("<hr style='margin:8px 0 16px'>", unsafe_allow_html=True)
+    st.subheader("✍️ New Blog")
+    st.divider()
 
     topic = st.text_area(
         "Topic / Prompt",
@@ -393,16 +242,17 @@ with st.sidebar:
         height=130,
     )
     as_of = st.date_input("As-of date", value=date.today())
-    st.markdown("<br>", unsafe_allow_html=True)
-    run_btn = st.button("🚀 Generate Blog", type="primary")
+    st.write("")
+    run_btn = st.button("🚀 Generate Blog", type="primary", use_container_width=True)
 
-    st.markdown("<hr style='margin:20px 0 14px'>", unsafe_allow_html=True)
-    st.markdown("### 📂 Past Blogs")
+    st.divider()
+    st.subheader("📂 Past Blogs")
 
     past_files = list_past_blogs()
+    selected_md_file = None
+
     if not past_files:
         st.caption("No saved blogs found (*.md in working folder).")
-        selected_md_file = None
     else:
         options: List[str] = []
         file_by_label: Dict[str, Path] = {}
@@ -424,8 +274,8 @@ with st.sidebar:
         )
         selected_md_file = file_by_label.get(selected_label)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("📂 Load selected blog", type="secondary"):
+        st.write("")
+        if st.button("📂 Load selected blog", use_container_width=True):
             if selected_md_file:
                 md_content = read_md_file(selected_md_file)
                 st.session_state["last_out"] = {
@@ -434,20 +284,13 @@ with st.sidebar:
                     "image_specs": [],
                     "final": md_content,
                 }
-                st.session_state["topic_prefill"] = extract_title_from_md(
-                    md_content, selected_md_file.stem
-                )
                 st.rerun()
 
-    st.markdown(
-        "<div class='footer'>Built with LangGraph + Streamlit</div>",
-        unsafe_allow_html=True,
-    )
+    st.divider()
+    st.caption("Built with LangGraph + Streamlit")
 
 
-# ─────────────────────────────────────────────
-# Tabs
-# ─────────────────────────────────────────────
+# ── Tabs ──────────────────────────────────────
 tab_plan, tab_evidence, tab_preview, tab_images, tab_logs = st.tabs(
     ["🧩 Plan", "🔎 Evidence", "📝 Preview", "🖼️ Images", "🧾 Logs"]
 )
@@ -455,9 +298,7 @@ tab_plan, tab_evidence, tab_preview, tab_images, tab_logs = st.tabs(
 logs: List[str] = []
 
 
-# ─────────────────────────────────────────────
-# Run generation
-# ─────────────────────────────────────────────
+# ── Run generation ────────────────────────────
 if run_btn:
     if not topic.strip():
         st.warning("Please enter a topic before generating.")
@@ -501,9 +342,9 @@ if run_btn:
 
             n_evidence = len(current_state.get("evidence", []) or [])
             n_sections = len(current_state.get("sections", []) or [])
-            n_images   = len(current_state.get("image_specs", []) or [])
-            plan_obj   = current_state.get("plan")
-            n_tasks    = (
+            n_images = len(current_state.get("image_specs", []) or [])
+            plan_obj = current_state.get("plan")
+            n_tasks = (
                 len((plan_obj or {}).get("tasks", []))
                 if isinstance(plan_obj, dict)
                 else 0
@@ -511,20 +352,20 @@ if run_btn:
 
             progress_placeholder.markdown(
                 f"""
-                <div style="display:flex;gap:14px;margin:10px 0;">
-                    <div class="stat-card" style="flex:1">
+                <div class="stat-row">
+                    <div class="stat-card">
                         <div class="stat-value">{n_tasks}</div>
                         <div class="stat-label">Tasks</div>
                     </div>
-                    <div class="stat-card" style="flex:1">
+                    <div class="stat-card">
                         <div class="stat-value">{n_evidence}</div>
                         <div class="stat-label">Evidence</div>
                     </div>
-                    <div class="stat-card" style="flex:1">
+                    <div class="stat-card">
                         <div class="stat-value">{n_sections}</div>
                         <div class="stat-label">Sections</div>
                     </div>
-                    <div class="stat-card" style="flex:1">
+                    <div class="stat-card">
                         <div class="stat-value">{n_images}</div>
                         <div class="stat-label">Images</div>
                     </div>
@@ -543,13 +384,11 @@ if run_btn:
             st.rerun()
 
 
-# ─────────────────────────────────────────────
-# Render results
-# ─────────────────────────────────────────────
+# ── Render results ────────────────────────────
 out = st.session_state.get("last_out")
 
 if out:
-    # ── Plan tab ──
+    # Plan tab
     with tab_plan:
         plan_obj = out.get("plan")
         if not plan_obj:
@@ -585,41 +424,36 @@ if out:
                     ]
                 ).sort_values("id")
                 st.dataframe(df, use_container_width=True, hide_index=True)
-
                 with st.expander("📋 Full task JSON"):
                     st.json(tasks)
 
-    # ── Evidence tab ──
+    # Evidence tab
     with tab_evidence:
         evidence = out.get("evidence") or []
         if not evidence:
-            st.info(
-                "No evidence returned — closed-book mode or no search results found."
-            )
+            st.info("No evidence returned — closed-book mode or no search results.")
         else:
             st.markdown(f"**{len(evidence)} sources gathered**")
             rows = []
             for e in evidence:
                 if hasattr(e, "model_dump"):
                     e = e.model_dump()
-                rows.append(
-                    {
-                        "title": e.get("title"),
-                        "published": e.get("published_at"),
-                        "source": e.get("source"),
-                        "url": e.get("url"),
-                    }
-                )
+                rows.append({
+                    "title": e.get("title"),
+                    "published": e.get("published_at"),
+                    "source": e.get("source"),
+                    "url": e.get("url"),
+                })
             st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-    # ── Preview tab ──
+    # Preview tab
     with tab_preview:
         final_md = out.get("final") or ""
         if not final_md:
             st.warning("No markdown content found.")
         else:
             render_markdown_with_local_images(final_md)
-            st.markdown("---")
+            st.divider()
 
             plan_obj = out.get("plan")
             if hasattr(plan_obj, "blog_title"):
@@ -649,7 +483,7 @@ if out:
                     use_container_width=True,
                 )
 
-    # ── Images tab ──
+    # Images tab
     with tab_images:
         specs = out.get("image_specs") or []
         images_dir = Path("images")
@@ -660,7 +494,6 @@ if out:
             if specs:
                 with st.expander("📋 Image plan"):
                     st.json(specs)
-
             if images_dir.exists():
                 files = [p for p in images_dir.iterdir() if p.is_file()]
                 if not files:
@@ -670,12 +503,7 @@ if out:
                         row_files = sorted(files)[i : i + 2]
                         cols = st.columns(2)
                         for col, img_path in zip(cols, row_files):
-                            col.image(
-                                str(img_path),
-                                caption=img_path.name,
-                                use_container_width=True,
-                            )
-
+                            col.image(str(img_path), caption=img_path.name)
                 z = images_zip(images_dir)
                 if z:
                     st.download_button(
@@ -685,7 +513,7 @@ if out:
                         mime="application/zip",
                     )
 
-    # ── Logs tab ──
+    # Logs tab
     with tab_logs:
         if logs:
             st.session_state["logs"].extend(logs)
@@ -701,15 +529,12 @@ if out:
             st.info("No logs yet — run a generation to see live events.")
 
 else:
-    # ── Empty state ──
     st.markdown(
         """
-        <div style="text-align:center;padding:72px 20px;color:#9ca3af;">
-            <div style="font-size:4rem;margin-bottom:18px;">✍️</div>
-            <h3 style="color:#374151;font-weight:600;margin-bottom:8px;">Ready to write</h3>
-            <p style="font-size:0.95rem;max-width:400px;margin:0 auto;">
-                Enter a topic in the sidebar and click <strong>Generate Blog</strong> to get started.
-            </p>
+        <div class="empty-state">
+            <div class="icon">✍️</div>
+            <h3>Ready to write</h3>
+            <p>Enter a topic in the sidebar and click <strong>Generate Blog</strong> to get started.</p>
         </div>
         """,
         unsafe_allow_html=True,
