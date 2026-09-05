@@ -1,0 +1,26 @@
+# Environment variables — NEVER commit this
+.env
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Generated images (ephemeral — not needed in repo)
+images/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Streamlit secrets (if any local secrets file)
+.streamlit/secrets.toml

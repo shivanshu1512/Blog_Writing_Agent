@@ -1,0 +1,30 @@
+# =============================================
+# Blog Writing Agent — Dependencies
+# =============================================
+
+# LangChain core
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0       # ChatOpenAI (used with NVIDIA NIM endpoint)
+langchain-community>=0.3.0    # DuckDuckGo search tool (via duckduckgo-search)
+
+# LangGraph (agent workflow orchestration)
+langgraph>=0.2.0
+
+# Web search (FREE — no API key needed)
+ddgs>=7.0.0
+
+# Pydantic (data validation / structured output)
+pydantic>=2.0.0
+
+# Google GenAI (image generation — free via AI Studio)
+google-genai>=1.0.0
+
+# Streamlit (frontend UI)
+streamlit>=1.35.0
+
+# Data handling
+pandas>=2.0.0
+
+# Environment variables loader
+python-dotenv>=1.0.0
