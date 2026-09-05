@@ -113,14 +113,33 @@ class State(TypedDict):
 # -----------------------------
 # 2) LLM  — NVIDIA NIM (free tier, OpenAI-compatible)
 # -----------------------------
-# NVIDIA NIM is 100% OpenAI-compatible. We just point base_url to NVIDIA
-# and swap the model name. No other code changes needed.
-llm = ChatOpenAI(
-    model="openai/gpt-oss-20b",
-    api_key=os.environ.get("NVIDIA_API_KEY"),
-    base_url="https://integrate.api.nvidia.com/v1",
-    temperature=0.6
-)
+# Lazy init — avoids crash at import time on Streamlit Cloud
+# (secrets are injected as env vars before first call, not before import)
+_llm_instance: Optional[ChatOpenAI] = None
+
+
+def _get_llm() -> ChatOpenAI:
+    global _llm_instance
+    if _llm_instance is None:
+        api_key = os.environ.get("NVIDIA_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "NVIDIA_API_KEY is not set. "
+                "On Streamlit Cloud: go to App Settings → Secrets and add it."
+            )
+        _llm_instance = ChatOpenAI(
+            model="openai/gpt-oss-20b",
+            api_key=api_key,
+            base_url="https://integrate.api.nvidia.com/v1",
+            temperature=0.6,
+            timeout=60,
+            max_retries=2,
+        )
+    return _llm_instance
+
+
+# Module-level alias — used everywhere in the graph; resolves lazily on first call
+llm = _get_llm
 
 # -----------------------------
 # 3) Router
@@ -140,7 +159,7 @@ If needs_research=true:
 """
 
 def router_node(state: State) -> dict:
-    decider = llm.with_structured_output(RouterDecision)
+    decider = llm().with_structured_output(RouterDecision)
     decision = decider.invoke(
         [
             SystemMessage(content=ROUTER_SYSTEM),
@@ -219,7 +238,7 @@ def research_node(state: State) -> dict:
     if not raw:
         return {"evidence": []}
 
-    extractor = llm.with_structured_output(EvidencePack)
+    extractor = llm().with_structured_output(EvidencePack)
     pack = extractor.invoke(
         [
             SystemMessage(content=RESEARCH_SYSTEM),
@@ -268,7 +287,7 @@ Output must match Plan schema.
 """
 
 def orchestrator_node(state: State) -> dict:
-    planner = llm.with_structured_output(Plan)
+    planner = llm().with_structured_output(Plan)
     mode = state.get("mode", "closed_book")
     evidence = state.get("evidence", [])
 
@@ -351,7 +370,7 @@ def worker_node(payload: dict) -> dict:
         for e in evidence[:20]
     )
 
-    section_md = llm.invoke(
+    section_md = llm().invoke(
         [
             SystemMessage(content=WORKER_SYSTEM),
             HumanMessage(
@@ -407,7 +426,7 @@ Return strictly GlobalImagePlan.
 """
 
 def decide_images(state: State) -> dict:
-    planner = llm.with_structured_output(GlobalImagePlan)
+    planner = llm().with_structured_output(GlobalImagePlan)
     merged_md = state["merged_md"]
     plan = state["plan"]
     assert plan is not None
